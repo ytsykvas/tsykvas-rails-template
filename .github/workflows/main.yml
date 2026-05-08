@@ -182,12 +182,19 @@ jobs:
           grep -q ".claude/docs/forms.md" app/concepts/crm/property/operation/create.rb
       - name: Verify concept generator rejects bad input
         working-directory: /tmp/host_app
+        # `bin/rails g` swallows Thor::Error exit codes (Rails generators
+        # print the validation message but exit 0). Verify by checking the
+        # printed error instead of the exit code.
         run: |
-          # Empty input → Thor::Error → non-zero exit
-          if bin/rails g tsykvas_rails_template:concept "" 2>/dev/null; then
-            echo "concept generator should have rejected empty input"
-            exit 1
-          fi
+          set -e
+          for bad in "" "::Bad" "Bad-Name"; do
+            output="$(bin/rails g tsykvas_rails_template:concept "$bad" 2>&1 || true)"
+            if ! echo "$output" | grep -qE "concept name is required|must not start with|invalid characters"; then
+              echo "concept generator should have rejected '$bad' with a validation error"
+              echo "actual output: $output"
+              exit 1
+            fi
+          done
       - name: Zeitwerk check
         working-directory: /tmp/host_app
         run: bin/rails zeitwerk:check
