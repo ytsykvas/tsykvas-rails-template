@@ -140,9 +140,11 @@ jobs:
           test "$(grep -c 'include Pundit::Authorization' app/controllers/application_controller.rb)" = "1"
           test "$(grep -c 'include OperationsMethods' app/controllers/application_controller.rb)" = "1"
           test "$(grep -c 'config.autoload_paths.*app/concepts' config/application.rb)" = "1"
-      - name: Run companions generator (Gemfile only — skip bundle + post-install)
+      - name: Run companions generator (Gemfile + bundle install — skip post-install sub-generators)
         working-directory: /tmp/host_app
-        run: bin/rails g tsykvas_rails_template:companions --skip-bundle --skip-post-install
+        # Bundle MUST run so subsequent `bin/rails g` calls can boot Rails
+        # (Bundler.setup requires Gemfile.lock to match Gemfile).
+        run: bin/rails g tsykvas_rails_template:companions --skip-post-install
       - name: Verify companions Gemfile mutations
         working-directory: /tmp/host_app
         run: |
