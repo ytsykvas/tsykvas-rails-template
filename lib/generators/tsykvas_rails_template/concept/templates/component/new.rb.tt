@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+
+class <%= class_name %>::Component::New < ::Base::Component::Base
+  def initialize(<%= singular_var %>:)
+    @<%= singular_var %> = <%= singular_var %>
+  end
+
+  private
+
+  attr_reader :<%= singular_var %>
+end

@@ -1,0 +1,49 @@
+.container.py-5
+  .row.justify-content-center
+    .col-lg-8
+      .card.shadow-sm
+        .card-body.p-4
+          h1.card-title.h2.mb-3= message
+
+          .alert.alert-success.d-flex.align-items-center.mb-4 role="alert"
+            span.badge.bg-success.me-2 OK
+            span Bootstrap 5.3 is installed and configured (this card, the alert, the modal button — all Bootstrap).
+
+          h2.h5.text-muted Next steps
+
+          ul.list-group.list-group-flush.mb-4
+            li.list-group-item
+              | Run
+              =< " "
+              code bin/rails g tsykvas_rails_template:companions
+              =< " "
+              | to add the recommended dev/test gems.
+            li.list-group-item
+              | Run
+              =< " "
+              code bin/rails g tsykvas_rails_template:concept Foo
+              =< " "
+              | to scaffold a new concept.
+            li.list-group-item
+              | Open Claude Code and run <code>/tsykvas-claude</code> to tailor docs to your stack.
+
+          .d-flex.flex-wrap.gap-2
+            a.btn.btn-primary href="https://github.com/tsykvas/tsykvas_rails_template" target="_blank" rel="noopener"
+              | Documentation
+            button.btn.btn-outline-secondary type="button" data-bs-toggle="modal" data-bs-target="#tsykvasWelcomeModal"
+              | Open a Bootstrap modal
+
+  / Bootstrap modal — opening it proves the JS bundle (window.bootstrap) loaded.
+  #tsykvasWelcomeModal.modal.fade tabindex="-1" aria-labelledby="tsykvasWelcomeModalLabel" aria-hidden="true"
+    .modal-dialog.modal-dialog-centered
+      .modal-content
+        .modal-header
+          h5#tsykvasWelcomeModalLabel.modal-title Bootstrap modal demo
+        .modal-body
+          p
+            | If this opened, the Bootstrap JS bundle is wired through
+            =< " "
+            code app/javascript/application.js
+            | .
+        .modal-footer
+          button.btn.btn-secondary type="button" data-bs-dismiss="modal" Close

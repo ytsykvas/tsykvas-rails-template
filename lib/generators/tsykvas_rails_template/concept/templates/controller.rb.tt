@@ -1,0 +1,45 @@
+# frozen_string_literal: true
+
+class <%= controller_class_name %> < ApplicationController
+<% if actions.include?("index") -%>
+  def index
+    endpoint <%= class_name %>::Operation::Index, <%= class_name %>::Component::Index
+  end
+
+<% end -%>
+<% if actions.include?("show") -%>
+  def show
+    endpoint <%= class_name %>::Operation::Show, <%= class_name %>::Component::Show
+  end
+
+<% end -%>
+<% if actions.include?("new") -%>
+  def new
+    endpoint <%= class_name %>::Operation::New, <%= class_name %>::Component::New
+  end
+
+<% end -%>
+<% if actions.include?("create") -%>
+  def create
+    endpoint <%= class_name %>::Operation::Create, <%= class_name %>::Component::New
+  end
+
+<% end -%>
+<% if actions.include?("edit") -%>
+  def edit
+    endpoint <%= class_name %>::Operation::Edit, <%= class_name %>::Component::Edit
+  end
+
+<% end -%>
+<% if actions.include?("update") -%>
+  def update
+    endpoint <%= class_name %>::Operation::Update, <%= class_name %>::Component::Edit
+  end
+
+<% end -%>
+<% if actions.include?("destroy") -%>
+  def destroy
+    endpoint <%= class_name %>::Operation::Destroy
+  end
+<% end -%>
+end

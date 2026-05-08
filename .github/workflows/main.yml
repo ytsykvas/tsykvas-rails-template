@@ -1,0 +1,194 @@
+name: Ruby
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Default task (rspec + rubocop) on Ruby ${{ matrix.ruby }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby:
+          - '3.2'
+          - '3.3'
+          - '3.4'
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: Run the default task
+        run: bundle exec rake
+      - name: Security audit (bundler-audit)
+        run: bundle exec rake audit
+
+  smoke:
+    runs-on: ubuntu-latest
+    name: Smoke (Ruby ${{ matrix.ruby }} × Rails ${{ matrix.rails }})
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ['3.2', '3.3', '3.4']
+        rails: ['~> 7.1.0', '~> 7.2.0', '~> 8.0.0']
+        # Rails 8 requires Ruby >= 3.2 — all combinations valid for our stack.
+        # Rails 7.1 supports Ruby 3.0+, so all matrix cells are valid.
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: Install Rails (${{ matrix.rails }})
+        run: gem install rails -v '${{ matrix.rails }}' --no-document
+      - name: Generate fresh Rails app
+        run: |
+          rails new /tmp/host_app \
+            --skip-bundle --skip-git --skip-test \
+            --skip-active-storage --skip-action-mailer \
+            --skip-action-mailbox --skip-action-text \
+            --skip-action-cable --skip-jbuilder \
+            --skip-system-test
+      - name: Wire gem into host Gemfile
+        working-directory: /tmp/host_app
+        run: |
+          printf '\ngem "tsykvas_rails_template", path: "%s"\n' "$GITHUB_WORKSPACE" >> Gemfile
+          bundle install
+      - name: Run install generator
+        working-directory: /tmp/host_app
+        run: bin/rails g tsykvas_rails_template:install
+      - name: Verify Claude payload landed (all 20 docs ship at install)
+        working-directory: /tmp/host_app
+        run: |
+          set -e
+          test -f .claude/agents/buddy.md
+          test -f .claude/agents/code-reviewer.md
+          test -f .claude/commands/check.md
+          test -f .claude/commands/tsykvas-claude.md
+          # All 20 docs ship at install (3 gem-canonical + 17 stack-tailoring).
+          for doc in tsykvas_rails_template forms companions architecture authentication background-jobs code-style commands concepts-refactoring database deployment design-system documentation i18n routing-and-namespaces security stimulus-controllers testing testing-examples ui-components; do
+            test -f ".claude/docs/${doc}.md" || { echo "missing .claude/docs/${doc}.md"; exit 1; }
+          done
+          test -f CLAUDE.md
+          grep -q "tsykvas-template:start" CLAUDE.md
+          grep -q "tsykvas-template:end" CLAUDE.md
+      - name: Verify Home example concept landed
+        working-directory: /tmp/host_app
+        run: |
+          set -e
+          test -f app/controllers/home_controller.rb
+          test -f app/concepts/home/operation/index.rb
+          test -f app/concepts/home/component/index.rb
+          test -f app/concepts/home/component/index.html.slim
+          test -f app/policies/home_policy.rb
+          grep -q 'root "home#index"' config/routes.rb
+          # Controller must be the canonical one-liner endpoint example.
+          grep -qE '^\s*endpoint\s+Home::Operation::Index,\s*Home::Component::Index' app/controllers/home_controller.rb
+      - name: Verify Base templates require their gems (no zeitwerk:check NameError)
+        working-directory: /tmp/host_app
+        run: |
+          set -e
+          grep -q 'require "view_component"' app/concepts/base/component/base.rb
+          grep -q 'require "pundit"' app/concepts/base/operation/base.rb
+      - name: Verify CLAUDE.md is preserved when pre-existing (claude-init-first workflow)
+        working-directory: /tmp/host_app
+        run: |
+          set -e
+          # Snapshot, simulate `claude init`, re-run install, verify untouched.
+          cp CLAUDE.md /tmp/CLAUDE.md.gem-version
+          USER_AUTHORED='# Existing CLAUDE.md from claude init\n\nUser content here.\n'
+          printf "$USER_AUTHORED" > CLAUDE.md
+          bin/rails g tsykvas_rails_template:install --skip-home-example --force
+          test "$(cat CLAUDE.md)" = "$(printf "$USER_AUTHORED")"
+          # Restore the gem's CLAUDE.md for the rest of the smoke job.
+          cp /tmp/CLAUDE.md.gem-version CLAUDE.md
+      - name: Verify Ruby skeleton landed
+        working-directory: /tmp/host_app
+        run: |
+          set -e
+          test -f app/concepts/base/operation/base.rb
+          test -f app/concepts/base/operation/result.rb
+          test -f app/concepts/base/component/base.rb
+          test -f app/controllers/concerns/operations_methods.rb
+          test -f app/policies/application_policy.rb
+          grep -q "config.autoload_paths" config/application.rb
+          grep -q "include Pundit::Authorization" app/controllers/application_controller.rb
+          grep -q "include OperationsMethods" app/controllers/application_controller.rb
+      - name: Re-run install (idempotency check)
+        working-directory: /tmp/host_app
+        run: |
+          set -e
+          bin/rails g tsykvas_rails_template:install --force
+          # Each include should appear exactly once after the second run.
+          test "$(grep -c 'include Pundit::Authorization' app/controllers/application_controller.rb)" = "1"
+          test "$(grep -c 'include OperationsMethods' app/controllers/application_controller.rb)" = "1"
+          test "$(grep -c 'config.autoload_paths.*app/concepts' config/application.rb)" = "1"
+      - name: Run companions generator (Gemfile only — skip bundle + post-install)
+        working-directory: /tmp/host_app
+        run: bin/rails g tsykvas_rails_template:companions --skip-bundle --skip-post-install
+      - name: Verify companions Gemfile mutations
+        working-directory: /tmp/host_app
+        run: |
+          set -e
+          grep -q '^gem "devise"' Gemfile
+          grep -q '^gem "simple_form"' Gemfile
+          grep -q '^gem "mini_magick"' Gemfile
+          grep -q '^gem "omniauth-rails_csrf_protection"' Gemfile
+          grep -q "rspec-rails" Gemfile
+          grep -q "factory_bot_rails" Gemfile
+          grep -q "shoulda-matchers" Gemfile
+          grep -q "webmock" Gemfile
+          grep -q "dotenv-rails" Gemfile
+      - name: Re-run companions (idempotency check — no duplicate Gemfile entries)
+        working-directory: /tmp/host_app
+        run: |
+          set -e
+          bin/rails g tsykvas_rails_template:companions --skip-bundle --skip-post-install --force
+          test "$(grep -c '^gem \"devise\"' Gemfile)" = "1"
+          test "$(grep -c '^gem \"simple_form\"' Gemfile)" = "1"
+      - name: Run concept generator
+        working-directory: /tmp/host_app
+        run: bin/rails g tsykvas_rails_template:concept Crm::Property --controller
+      - name: Verify generated concept tree
+        working-directory: /tmp/host_app
+        run: |
+          set -e
+          test -f app/concepts/crm/property/operation/index.rb
+          test -f app/concepts/crm/property/operation/show.rb
+          test -f app/concepts/crm/property/operation/create.rb
+          test -f app/concepts/crm/property/operation/destroy.rb
+          test -f app/concepts/crm/property/component/index.rb
+          test -f app/concepts/crm/property/component/index.html.slim
+          test -f app/controllers/crm/properties_controller.rb
+          grep -q ".claude/docs/forms.md" app/concepts/crm/property/operation/create.rb
+      - name: Verify concept generator rejects bad input
+        working-directory: /tmp/host_app
+        run: |
+          # Empty input → Thor::Error → non-zero exit
+          if bin/rails g tsykvas_rails_template:concept "" 2>/dev/null; then
+            echo "concept generator should have rejected empty input"
+            exit 1
+          fi
+      - name: Zeitwerk check
+        working-directory: /tmp/host_app
+        run: bin/rails zeitwerk:check
+      - name: Run probe
+        working-directory: /tmp/host_app
+        run: bundle exec rake tsykvas:probe

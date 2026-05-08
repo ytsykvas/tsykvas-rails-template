@@ -1,0 +1,5 @@
+h1= I18n.t("<%= i18n_key %>.new.title")
+
+= form_with model: @<%= singular_var %> do |f|
+  / TODO: form fields for <%= singular_var %>.
+  = f.submit

@@ -1,0 +1,10 @@
+# frozen_string_literal: true
+
+class <%= class_name %>::Operation::Show < ::Base::Operation::Base
+  def perform!(params:, current_user:)
+    <%= singular_var %> = <%= resource_class %>.find(params[:id])
+    authorize! <%= singular_var %>, :show?
+
+    self.model = <%= singular_var %>
+  end
+end

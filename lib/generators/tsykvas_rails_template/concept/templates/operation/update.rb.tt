@@ -1,0 +1,31 @@
+# frozen_string_literal: true
+
+class <%= class_name %>::Operation::Update < ::Base::Operation::Base
+  def perform!(params:, current_user:)
+    <%= singular_var %> = <%= resource_class %>.find(params[:id])
+    authorize! <%= singular_var %>, :update?
+
+    <%= singular_var %>.assign_attributes(<%= singular_var %>_params(params))
+    <%= singular_var %>.save!
+
+    self.model = <%= singular_var %>
+    self.redirect_path = "/<%= url_helper_plural.tr('_', '/') %>/#{<%= singular_var %>.id}"
+    notice(I18n.t("<%= i18n_key %>.update.success"))
+  end
+
+  private
+
+  # For complex forms (virtual attributes, sub-operation calls during
+  # assignment, multi-record submits) promote this into a
+  # <%= class_name %>::Form object. See .claude/docs/forms.md.
+  def <%= singular_var %>_params(params)
+    raise NotImplementedError, <<~MSG
+      Implement <%= class_name %>::Operation::Update#<%= singular_var %>_params.
+
+        params.require(:<%= singular_var %>).permit(:name, :description) # list real attributes
+
+      For complex forms, promote into a <%= class_name %>::Form object
+      instead. See .claude/docs/forms.md.
+    MSG
+  end
+end

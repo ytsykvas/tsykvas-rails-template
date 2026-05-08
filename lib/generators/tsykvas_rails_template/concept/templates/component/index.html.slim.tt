@@ -1,0 +1,5 @@
+h1= I18n.t("<%= i18n_key %>.index.title")
+
+ul
+  - @<%= plural_var %>.each do |<%= singular_var %>|
+    li= <%= singular_var %>.id

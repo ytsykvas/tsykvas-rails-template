@@ -1,0 +1,21 @@
+/.bundle/
+/.yardoc
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+
+# rspec failure tracking
+.rspec_status
+
+# Bundler — gem authors don't ship Gemfile.lock
+/Gemfile.lock
+
+# IDE / editor state
+/.idea/
+/.ruby-lsp/
+
+# Local Claude Code settings (user-specific permission grants etc.)
+/.claude/settings.local.json

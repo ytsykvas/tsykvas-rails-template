@@ -1,0 +1,9 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+gem "rails", "~> 8.0"
+gem "pundit"
+gem "view_component"
+gem "slim-rails"
+gem "solid_queue"

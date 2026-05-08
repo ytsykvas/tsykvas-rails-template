@@ -1,0 +1,29 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    devise (4.9.4)
+    pundit (2.4.0)
+    rails (8.0.2)
+    rspec-rails (7.1.1)
+    slim (5.2.1)
+    slim-rails (3.7.0)
+    solid_queue (1.0.2)
+    view_component (3.21.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  devise
+  pundit
+  rails (~> 8.0)
+  rspec-rails
+  slim-rails
+  solid_queue
+  view_component
+
+RUBY VERSION
+   ruby 3.4.7p0
+
+BUNDLED WITH
+   2.5.21

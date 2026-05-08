@@ -1,0 +1,4 @@
+h1= I18n.t("<%= i18n_key %>.show.title")
+
+/ TODO: render @<%= singular_var %> attributes here.
+p ID: #{@<%= singular_var %>.id}

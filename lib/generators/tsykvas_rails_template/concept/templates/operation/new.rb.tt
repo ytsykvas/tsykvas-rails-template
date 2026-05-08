@@ -1,0 +1,10 @@
+# frozen_string_literal: true
+
+class <%= class_name %>::Operation::New < ::Base::Operation::Base
+  def perform!(params:, current_user:)
+    <%= singular_var %> = <%= resource_class %>.new
+    authorize! <%= singular_var %>, :new?
+
+    self.model = <%= singular_var %>
+  end
+end

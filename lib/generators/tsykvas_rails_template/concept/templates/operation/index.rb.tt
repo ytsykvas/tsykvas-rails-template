@@ -1,0 +1,9 @@
+# frozen_string_literal: true
+
+class <%= class_name %>::Operation::Index < ::Base::Operation::Base
+  def perform!(params:, current_user:)
+    <%= plural_var %> = policy_scope(<%= resource_class %>)
+
+    self.model = ::OpenStruct.new(<%= plural_var %>: <%= plural_var %>)
+  end
+end

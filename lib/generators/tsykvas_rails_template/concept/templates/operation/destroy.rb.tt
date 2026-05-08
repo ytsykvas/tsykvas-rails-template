@@ -1,0 +1,13 @@
+# frozen_string_literal: true
+
+class <%= class_name %>::Operation::Destroy < ::Base::Operation::Base
+  def perform!(params:, current_user:)
+    <%= singular_var %> = <%= resource_class %>.find(params[:id])
+    authorize! <%= singular_var %>, :destroy?
+    <%= singular_var %>.destroy!
+
+    self.model = <%= singular_var %>
+    self.redirect_path = "/<%= url_helper_plural.tr('_', '/') %>"
+    notice(I18n.t("<%= i18n_key %>.destroy.success"))
+  end
+end
