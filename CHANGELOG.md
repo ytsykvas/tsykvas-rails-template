@@ -6,6 +6,8 @@ project follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-08
+
 ### Changed (post real-world test 2026-05-08)
 
 - **All 20 architecture docs now ship at install** (previously only the 3
@@ -41,6 +43,17 @@ project follows [SemVer](https://semver.org/).
 - **Install no longer overwrites an existing `CLAUDE.md`.** Skips with a
   yellow warning suggesting `/tsykvas-claude`. Supports the
   `claude init` → install gem → reinit workflow.
+- **CI smoke job now runs `bundle install` after the first `:companions`
+  invocation** (dropped `--skip-bundle`) so subsequent `bin/rails g` calls
+  can boot Rails. Without this, `Bundler.setup` failed on the stale
+  `Gemfile.lock` (devise / simple_form / etc. listed in Gemfile but not
+  installed).
+- **CI test for concept-generator input validation** now grep stdout for
+  the expected validation message instead of relying on exit code.
+  `bin/rails g` swallows `Thor::Error` exit codes (Rails generators print
+  the message but exit `0`), so the previous "expect non-zero on bad
+  input" check inverted its own logic and reported the success branch
+  every time.
 
 ### Changed
 
@@ -196,5 +209,6 @@ Initial public release.
 - CI smoke job: generates a fresh Rails app, installs the gem from path, runs
   both generators, verifies idempotency, runs `bin/rails zeitwerk:check`.
 
-[Unreleased]: https://github.com/tsykvas/tsykvas_rails_template/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/tsykvas/tsykvas_rails_template/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ytsykvas/tsykvas-rails-template/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/ytsykvas/tsykvas-rails-template/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/ytsykvas/tsykvas-rails-template/releases/tag/v0.1.0
